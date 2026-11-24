@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Futsal AFA en Vivo</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#09131f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: una columna tipo app de resultados; bloques por torneo; detalle en hoja que sube desde abajo */
+  --bg:#09131f;
+  --card:#0f1e30;
+  --card2:#132840;
+  --line:#1d3552;
+  --grid:#2f5070;        /* líneas entre partidos, más claras */
+  --ink:#eef4fb;
+  --muted:#8aa3c0;
+  --accent:#74b9ec;      /* celeste AFA */
+  --live:#ffb020;        /* en vivo */
+  --pend:#ff5a5f;        /* sin validar */
+  --ok:#3ecf8e;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14.5px;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto;padding:0 12px 40px}
+
+.prueba{background:#3a2a05;color:#ffd27a;border:1px solid #6b4d0e;border-radius:10px;padding:8px 12px;margin:0 0 10px;font-size:13px;text-align:center}
+/* Encabezado */
+header{display:flex;align-items:flex-start;gap:9px;padding:16px 4px 10px}
+.logo{font-family:var(--display);font-weight:800;font-size:28px;letter-spacing:.5px;line-height:1;text-transform:uppercase}
+.logo b{color:var(--accent)}
+.logo small{display:block;font-family:var(--body);font-weight:500;font-size:12px;letter-spacing:0;text-transform:none;color:var(--muted);margin-top:6px;text-align:center}
+.logo{flex:1}
+.escudo{width:24px;height:28px;flex:none}
+.logo .tit{display:flex;align-items:center;justify-content:center;gap:9px}
+
+/* Rama */
+.rama{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line);margin:0 0 12px}
+.rama button{font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:.5px;padding:6px 0;color:var(--muted);border-bottom:3px solid transparent}
+.rama button[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+
+/* Botones grandes */
+.vistas{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0 6px}
+.vistas button{font-family:var(--display);font-weight:800;font-size:18px;letter-spacing:.5px;padding:6px 0;border-radius:10px;background:var(--card);border:1px solid var(--line);color:var(--muted)}
+.vistas button[aria-pressed="true"]{background:var(--accent);color:#06121f;border-color:var(--accent)}
+
+/* Barra de fecha (agenda) */
+.dia{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr);align-items:stretch;background:var(--card);border-radius:14px;margin-bottom:12px;overflow:hidden}
+.dianav{display:grid;grid-template-columns:34px minmax(0,1fr) 34px;align-items:center;border-right:1px solid var(--line)}
+.dianav .flecha{height:42px;font-size:22px;color:var(--ink)}
+.dialbl{position:relative;text-align:center;font-family:var(--display);font-weight:700;font-size:15px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dialbl{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;cursor:pointer;padding:12px 0;border-radius:8px;transition:background .2s}
+.dialbl.apretando{background:var(--card2)}
+.dialbl small{font-size:10px;color:var(--muted)}
+/* calendario propio */
+.cal{background:var(--card);border-radius:14px;padding:10px}
+.calnav{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;margin-bottom:8px}
+.calnav b{text-align:center;font-family:var(--display);font-size:18px;text-transform:uppercase}
+.calnav button{height:40px;font-size:22px}
+.calg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.calg .dn{font-size:11px;color:var(--muted);padding:4px 0}
+.calg button{height:40px;border-radius:8px;font-weight:600;position:relative}
+.calg button.hay::after{content:"";position:absolute;left:50%;bottom:5px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--accent)}
+.calg button.hoy{outline:1px solid var(--accent)}
+.calg button.sel{background:var(--accent);color:#06121f}
+.calg button.sel::after{background:#06121f}
+.filtros{display:contents}
+.filtros button{font-family:var(--display);font-weight:700;font-size:15px;padding:0 4px;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
+.filtros button+button{border-left:1px solid var(--line)}
+.filtros button[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.filtros button.vivo[aria-pressed="true"]{border-bottom-color:var(--live);color:var(--live)}
+
+.publi{border:1px dashed var(--line);border-radius:12px;padding:18px;text-align:center;color:var(--muted);font-size:13px;margin-bottom:12px}
+
+/* Bloque de torneo */
+.bloque{background:var(--card);border-radius:14px;margin-bottom:12px;overflow:hidden}
+.bhead{display:flex;align-items:center;justify-content:space-between;width:100%;padding:12px 14px;text-align:left}
+.bhead h2{margin:0;font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:.4px;text-transform:uppercase;text-wrap:balance}
+.bhead .sub{font-size:12px;color:var(--muted);font-weight:500}
+.chev{font-size:20px;color:var(--muted);transition:transform .15s}
+.bloque.cerrado .chev{transform:rotate(180deg)}
+.bloque.cerrado .bbody{display:none}
+.bpie{display:block;width:100%;text-align:center;padding:10px;border-top:1px solid var(--grid);font-family:var(--display);font-weight:700;font-size:15px;color:var(--accent);letter-spacing:.3px}
+
+/* Fila de partido */
+.p{display:block;width:100%;text-align:left;border-top:1px solid var(--grid)}
+.prow{display:grid;grid-template-columns:52px minmax(0,1fr) 62px minmax(0,1fr);align-items:stretch;min-height:42px}
+.est{align-self:stretch;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:1px solid var(--grid);font-family:var(--body);font-weight:700;font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.est.vivo,.est.et{color:var(--live)}
+.est .hact{font-size:10.5px;font-weight:500;color:var(--muted);margin-top:2px}
+.est .punto{width:7px;height:7px;border-radius:50%;background:var(--live);margin-bottom:3px;animation:lat 1.2s infinite}
+@keyframes lat{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.est .punto{animation:none}}
+.eq{display:flex;align-items:center;justify-content:center;text-align:center;font-weight:700;font-size:13px;padding:6px;line-height:1.15;min-width:0}
+.eq>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.sc{display:flex;align-items:center;justify-content:center;border-left:1px solid var(--grid);border-right:1px solid var(--grid);font-family:var(--display);font-weight:800;font-size:18px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sc{flex-direction:column}
+.sc .pen{font-family:var(--body);font-size:10px;font-weight:600;color:var(--muted);line-height:1}
+.sc.prog{color:var(--muted);font-size:16px}
+.sc.vivo{color:var(--live)}
+.sc.pend{color:var(--pend)}
+.act{font-size:11px;color:var(--muted);border-top:1px solid var(--grid);padding:3px 10px;text-align:center}
+.act b{color:var(--live);font-weight:600}
+.vacio{padding:26px 16px;text-align:center;color:var(--muted)}
+
+/* Tablas */
+.selrow{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+select{flex:1;font:inherit;font-weight:700;font-family:var(--display);font-size:18px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 10px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--card);border-radius:10px;padding:4px;margin-bottom:10px}
+.seg button{font-family:var(--display);font-weight:700;font-size:16px;padding:8px;border-radius:8px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--card2);color:var(--ink)}
+.chips{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:8px;margin-bottom:10px}
+.chips button{font-family:var(--display);font-weight:700;font-size:15px;padding:6px 0;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.chips button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#06121f}
+.tabla{background:var(--card);border-radius:14px;overflow:hidden;margin-bottom:12px}
+.ttit{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;font-family:var(--display);font-weight:800;font-size:18px;text-transform:uppercase}
+.scrollx{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:8px 6px;text-align:center;white-space:nowrap;background:var(--card)}
+th{font-size:13px;font-weight:600;color:var(--muted);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+td{border-bottom:1px solid var(--line);font-size:14px}
+tbody tr:nth-child(even) td{background:#112236}
+td.pos{font-family:var(--display);font-weight:800;font-size:16px;width:30px;min-width:30px;color:var(--muted)}
+td.eqt{text-align:left;font-weight:700;width:112px;min-width:112px;max-width:112px;overflow:hidden;text-overflow:ellipsis}
+td.eqt button{text-align:left;font-weight:700}
+td.pts{font-family:var(--display);font-weight:800;font-size:17px;width:38px;min-width:38px}
+/* columnas fijas: #, Equipo, Pts y J; el resto se corre con el dedo */
+.fija{position:sticky;z-index:1}
+.f1{left:0}.f2{left:30px}.f3{left:142px}.f4{left:180px;width:34px;min-width:34px;box-shadow:inset -1px 0 0 var(--line)}
+td button.jbtn{color:var(--accent);font:inherit;width:100%}
+th.eqt{text-align:left;width:112px;min-width:112px}
+.ult{display:inline-flex;gap:2px}
+.ult i{font-style:normal;font-size:11px;font-weight:700;width:17px;height:17px;line-height:17px;border-radius:3px;color:#06121f}
+.ult .V{background:var(--ok)}.ult .E{background:#f2c94c}.ult .D{background:var(--pend)}
+.rojo{display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--pend)}
+.fnav{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;background:var(--card2);border-radius:12px;margin-bottom:8px}
+.flbl{position:relative;text-align:center;font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:.5px}
+.flbl select{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.fnav .flecha{height:42px;font-size:22px}
+.diah{text-align:center;font-size:13px;color:var(--muted);padding:6px;border-top:1px solid var(--grid)}
+.leyenda{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:-4px 2px 14px}
+.leyenda span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px;background:var(--c)}
+
+/* Hoja de detalle */
+.velo{position:fixed;inset:0;background:rgba(3,8,14,.7);display:none;z-index:10}
+.velo.on{display:block}
+.hoja{position:fixed;left:0;right:0;bottom:0;max-height:88%;overflow:auto;background:var(--bg);border-radius:18px 18px 0 0;border-top:1px solid var(--line);z-index:11;transform:translateY(100%);transition:transform .2s}
+.hoja.on{transform:none}
+@media (prefers-reduced-motion:reduce){.hoja{transition:none}}
+.hin{max-width:720px;margin:0 auto;padding:10px 14px 30px}
+.htop{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.miga{font-size:14px;color:var(--muted)}
+.miga b{color:var(--accent);font-weight:600}
+.cerrar{font-size:15px;font-weight:600;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:7px 14px}
+.marc{background:var(--card);border-radius:14px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:18px 10px;text-align:center;margin-bottom:10px}
+.marc .n{font-family:var(--display);font-weight:800;font-size:18px;line-height:1.1}
+.marc .r{font-family:var(--display);font-weight:800;font-size:40px;padding:0 10px;font-variant-numeric:tabular-nums}
+.marc .r small{font-size:20px;padding:0 6px;vertical-align:middle}
+.marc .s{grid-column:1/-1;font-size:14px;color:var(--muted);margin-top:4px}
+.valchip{display:inline-block;font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;margin:0 auto 10px}
+.valchip.ok{background:rgba(62,207,142,.15);color:var(--ok)}
+.valchip.no{background:rgba(255,90,95,.15);color:var(--pend)}
+.mam{background:var(--card);border-radius:14px;overflow:hidden}
+.mam h3{margin:0;padding:11px 14px;font-family:var(--display);font-weight:800;font-size:18px;text-transform:uppercase}
+.ev{display:grid;grid-template-columns:56px 1fr;gap:4px 10px;padding:10px 14px;border-top:1px solid var(--line)}
+.ev .m{font-family:var(--display);font-weight:800;font-size:15px;color:var(--accent);font-variant-numeric:tabular-nums}
+.ev .t{font-weight:700}
+.ev .q{grid-column:2;font-size:13px;color:var(--muted)}
+.ev.hito{grid-template-columns:1fr;text-align:center;background:rgba(255,255,255,.02)}
+.ev.hito .t{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.3px;text-transform:uppercase}
+.ev.hito .q{grid-column:1}
+.lst .eq.yo{color:var(--ink);font-size:14.5px;font-weight:800}.lst .eq.otro{color:var(--muted);font-weight:600}
+
+footer{margin-top:18px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:10px}
+.toggle{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:12px;padding:10px 12px}
+.toggle input{width:20px;height:20px;accent-color:var(--accent)}
+@media (max-width:400px){
+  .prow{grid-template-columns:48px minmax(0,1fr) 56px minmax(0,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="prueba" role="note"><b>Versión de prueba.</b> Los partidos y resultados son datos de ejemplo.</div>
+  <header>
+    <!-- lugar del escudo de AFA: reemplazar por el archivo oficial -->
+    <div class="logo"><div class="tit"><svg class="escudo" viewBox="0 0 30 36" aria-label="Escudo (provisorio)"><path d="M15 1L28 5v12c0 9-6 15-13 18C8 32 2 26 2 17V5z" fill="none" stroke="#74b9ec" stroke-width="2.4"/><text x="15" y="21" text-anchor="middle" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="10" fill="#74b9ec">AFA</text></svg><span>Futsal <b>AFA</b> en Vivo</span></div><small>Resultados y tablas de todas las categorías</small></div>
+  </header>
+
+  <div class="vistas">
+    <button id="vA" aria-pressed="true">AGENDA</button>
+    <button id="vT" aria-pressed="false">TABLAS</button>
+  </div>
+
+  <nav class="rama" aria-label="Rama">
+    <button id="rM" aria-pressed="true">MASCULINO</button>
+    <button id="rF" aria-pressed="false">FEMENINO</button>
+  </nav>
+
+  <main id="main"></main>
+
+  <footer>
+    <label class="toggle"><input type="checkbox" id="comision"> Ver como Comisión / Referente</label>
+    <div class="leyenda" style="margin:0 2px"><span style="--c:var(--live)">En vivo</span><span style="--c:var(--pend)">Finalizado sin validar</span><span style="--c:var(--ink)">Validado</span></div>
+    <div id="notaT" style="margin:-4px 2px 0;font-size:12px;text-align:center">Las tablas se actualizan al finalizar cada partido.</div>
+  </footer>
+</div>
+
+<div class="velo" id="velo"></div>
+<div class="hoja" id="hoja" role="dialog" aria-modal="true"><div class="hin" id="hin"></div></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- datos de ejemplo ---------- */
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+var R=rng(20261121);
+function pick(a){return a[Math.floor(R()*a.length)];}
+var NOM=["Juan","Martín","Diego","Pablo","Sergio","Lucas","Marcelo","Gabriel","Hernán","Leandro","Carla","Romina","Valeria","Lorena","Natalia","Silvina"];
+var APE=["Pérez","Gómez","Fernández","Rodríguez","López","Martínez","Sosa","Díaz","Romero","Acosta","Benítez","Medina","Herrera","Castro","Ruiz","Molina"];
+function persona(){return pick(NOM)+" "+pick(APE);}
+
+var CM=["1a","3a","4a","5a","6a","7a","8a"],CF=["1a","3a","4a","5a","6a"];
+var TORNEOS={
+ M:[
+  {id:"MA",nombre:"Primera A",tipo:"liga",real:true,cats:CM,fa:34,eq:["17 de Agosto","América del Sud","Barracas Central","Boca","Camioneros","Estudiantil Porteño","Estrella de Boedo","Ferro","Glorias de Tigre","Hebraica","Newell's","Independiente","Jorge Newbery","Kimberley","Pinocho","Racing","River","San Lorenzo"]},
+  {id:"MB",nombre:"Primera B",tipo:"liga",cats:CM,fa:5,eq:["Vélez Sarsfield","Pacífico","Villa La Ñata","Nueva Estrella","Atlanta","Franja de Oro","Banfield","Alvear","Arsenal","Platense","Gimnasia (LP)","Country","Argentinos Jrs","Chacarita","SECLA","Metalúrgico","Miriñaque","Nueva Chicago"],
+   hoy:["finV","finN","vivo2","vivo1","et","prog","prog","prog","prog"],horas:["17:00","18:30","19:30","20:00","20:30","21:00","21:00","21:30","21:30"]},
+  {id:"MC",nombre:"Primera C",tipo:"liga",cats:CM,fa:4,eq:["Juv. Tapiales","Asturiano","Libertadores","Almafuerte","Dep. Morón","Villa Modelo","Estrella Maldonado","El Talar","CIDECO","Excursionistas","Primera Junta","GEVS","Dep. Merlo","Rosario Central","25 de Mayo","UNLAM","Villa Heredia","Villa Malcolm"],
+   hoy:["finN","prog","prog","prog","prog","prog","prog","prog","prog"],horas:["18:30","20:00","20:30","21:00","21:00","21:30","21:30","21:30","21:30"]},
+  {id:"MD1",nombre:"Primera D1",tipo:"liga",cats:CM,fa:2,eq:["Dep. Tigre","Parque","Estudiantes (LP)","Morán","Las Heras","Almagro","El Porvenir","Juvencia","Lamadrid","Mitre","UAI Urquiza","San Martín (T)","Colón","Reconquista","Pueyrredón","Stentor","América","Def. Olivos"],
+   hoy:["finV","prog","prog","prog","prog","prog","prog","prog","prog"],horas:["18:00","19:30","20:30","21:00","21:00","21:30","21:30","21:30","21:30"]},
+  {id:"MD2",nombre:"Primera D2",tipo:"liga",cats:CM,fa:2,eq:["Caballito Jrs","Comunicaciones","J. Unida (Cdla)","JJ Urquiza","All Boys","Ituzaingó","Est. Federal","Monteviejo","Brown (A)","Huracán","Atlético Prov. (Ros)","Dock Sud","Alte. Brown","Dep. Riestra","Sarmiento (O)","Sp. Italiano","U. Ezpeleta","Social Club"],
+   hoy:["prog","prog","prog","prog","prog","prog","prog","prog","prog"],horas:["18:00","19:00","20:00","21:00","21:00","21:30","21:30","21:30","21:30"]},
+  {id:"MCA",nombre:"Copa Argentina",tipo:"elim",cats:["1a"],eq:["Boca","Kimberley","River","Pinocho","San Lorenzo","Racing","Ferro","Hebraica","Banfield","Vélez Sarsfield","Atlanta","Huracán","Independiente","Newell's","Camioneros","17 de Agosto"],
+   inst:[{n:"Octavos de final",d:-3},{n:"Cuartos de final",d:4},{n:"Semifinal",d:11},{n:"Final",d:18}]},
+  {id:"MSC",nombre:"Supercopa",tipo:"elim",cats:["1a"],eq:["Boca","Kimberley"],inst:[{n:"Final",d:-60}]},
+  {id:"MFF",nombre:"Final Four",tipo:"elim",cats:["1a"],eq:["Boca","River","San Lorenzo","Kimberley"],inst:[{n:"Semifinal",d:28},{n:"Final",d:29}]},
+  {id:"MCO",nombre:"Copa de Oro",tipo:"liga",cats:["1a"],fa:3,off:3,eq:["Boca","River","Racing","Ferro","Kimberley","Pinocho"]},
+  {id:"MCP",nombre:"Copa de Plata",tipo:"liga",cats:["1a"],fa:3,off:3,eq:["Hebraica","Camioneros","Newell's","Jorge Newbery","Glorias de Tigre","América del Sud"]},
+  {id:"MFO",nombre:"Copa Futuro Oro",tipo:"liga",cats:["4a","5a","6a","7a","8a"],fa:2,off:2,eq:["Boca","River","Racing","Kimberley","Pinocho","Ferro"]},
+  {id:"MFP",nombre:"Copa Futuro Plata",tipo:"liga",cats:["4a","5a","6a","7a","8a"],fa:2,off:2,eq:["Hebraica","Camioneros","Banfield","Vélez Sarsfield","Atlanta","Platense"]},
+  {id:"MLN",nombre:"Liga Nacional",tipo:"liga",cats:["1a"],fa:4,off:4,eq:["Boca","Kimberley","River","Pinocho","San Lorenzo","Racing"]},
+  {id:"MTI",nombre:"Torneo Integración",tipo:"liga",cats:["1a"],fa:2,off:4,eq:["Sp. Italiano","Ituzaingó","Almagro","Mitre","Excursionistas","Dep. Morón"]}
+ ],
+ F:[
+  {id:"FA",nombre:"Primera A",tipo:"liga",cats:CF,fa:5,eq:["17 de Agosto","All Boys","Boca Juniors","Camioneros","Ferro Carril Oeste","Gimnasia y Esgrima (La Plata)","Huracán","Independiente","Pacífico","Pinocho","Platense","Racing Club","River Plate","San Lorenzo","S.E.C.L.A.","Unión Ezpeleta"],
+   hoy:["finV","vivo1","prog","prog"],horas:["17:30","19:00","20:00","21:00"]},
+  {id:"FB",nombre:"Primera B",tipo:"liga",cats:CF,fa:5,eq:["Almafuerte","Alvear","Argentinos Juniors","Arsenal","Atlanta","Barracas Central","Centro Asturiano","Círculo Vaporaki","Deportivo Morón","Estudiantes (La Plata)","General Lamadrid","Glorias de Tigre","La Matanza","Newell's Old Boys","Orientación Juvenil"],
+   hoy:["finN","prog","prog","prog"],horas:["18:00","19:00","20:00","21:00"]},
+  {id:"FC",nombre:"Primera C",tipo:"liga",cats:CF,fa:4,eq:["Almagro","Banfield","Comunicaciones","Defensores de Olivos","Deportivo Pampero","Franja de Oro","Ituzaingó","Juventud de Tapiales","Mavia","Miriñaque","Nueva Chicago","Padre Carlos Mugica","Provincial (Rosario)","Unión y Fortaleza","Vélez Sarsfield","Villa Malcolm"],
+   hoy:["finV","prog","prog","prog"],horas:["18:00","19:30","20:30","21:00"]},
+  {id:"FCA",nombre:"Copa Argentina",tipo:"elim",cats:["1a"],eq:["Boca Juniors","Huracán","River Plate","Platense","San Lorenzo","Racing Club","Independiente","Pacífico"],
+   inst:[{n:"Cuartos de final",d:-4},{n:"Semifinal",d:3},{n:"Final",d:10}]},
+  {id:"FSC",nombre:"Supercopa",tipo:"elim",cats:["1a"],eq:["Boca Juniors","Racing Club"],inst:[{n:"Final",d:-55}]},
+  {id:"FCO",nombre:"Copa de Oro",tipo:"liga",cats:["1a"],fa:3,off:3,eq:["Boca Juniors","River Plate","San Lorenzo","Racing Club","Ferro Carril Oeste","Independiente"]},
+  {id:"FLN",nombre:"Liga Nacional",tipo:"liga",cats:["1a"],fa:3,off:4,eq:["Boca Juniors","River Plate","San Lorenzo","Racing Club","Huracán","Platense"]}
+ ]};
+var CORTO={"América del Sud":"América","Barracas Central":"Barracas","Estudiantil Porteño":"Est. Porteño","Estrella de Boedo":"Est. de Boedo","Glorias de Tigre":"Glorias","Jorge Newbery":"Newbery","San Lorenzo":"San Lorenzo","Ciudad de Bs. As.":"Ciudad","Villa La Ñata":"V. La Ñata","Nueva Chicago":"N. Chicago","Comunicaciones":"Comunicac.","Def. de Belgrano":"Def. Belgrano","Pedro Echagüe":"P. Echagüe","Franja de Oro":"Franja de Oro","Sp. Barracas":"Sp. Barracas","UAI Urquiza":"UAI Urquiza","Boca Juniors":"Boca","Ferro Carril Oeste":"Ferro","Gimnasia y Esgrima (La Plata)":"Gimnasia LP","Racing Club":"Racing","River Plate":"River","S.E.C.L.A.":"SECLA","Unión Ezpeleta":"Ezpeleta","Argentinos Juniors":"Argentinos","Centro Asturiano":"Asturiano","Círculo Vaporaki":"Vaporaki","Deportivo Morón":"Dep. Morón","Estudiantes (La Plata)":"Estudiantes","General Lamadrid":"Lamadrid","Newell's Old Boys":"Newell's","Orientación Juvenil":"Orient. Juvenil","Defensores de Olivos":"Def. Olivos","Deportivo Pampero":"Pampero","Juventud de Tapiales":"Tapiales","Padre Carlos Mugica":"P. C. Mugica","Provincial (Rosario)":"Provincial","Unión y Fortaleza":"U. y Fortaleza","Vélez Sarsfield":"Vélez","Nueva Estrella":"N. Estrella","Argentinos Jrs":"Argentinos","Gimnasia (LP)":"Gimnasia LP","Estrella Maldonado":"Est. Maldonado","Primera Junta":"1ra Junta","Rosario Central":"Rosario C.","Villa Heredia":"V. Heredia","Villa Malcolm":"V. Malcolm","Villa Modelo":"V. Modelo","Juv. Tapiales":"Tapiales","Excursionistas":"Excursion.","Estudiantes (LP)":"Estudiantes","San Martín (T)":"San Martín","Caballito Jrs":"Caballito","J. Unida (Cdla)":"J. Unida","Atlético Prov. (Ros)":"At. Provincial","Sarmiento (O)":"Sarmiento","Dep. Riestra":"Riestra","U. Ezpeleta":"Ezpeleta","Est. Federal":"Est. Federal","Reconquista":"Reconquista","Arg. de Merlo":"Arg. Merlo","C. Ballester":"C. Ballester","Puerto Nuevo":"Pto. Nuevo"};
+function corto(n){return CORTO[n]||n;}
+var CATS={M:["1a","3a","4a","5a","6a","7a","8a"],F:["1a","3a","4a","5a","6a"]};
+var HORA_INF={"4a":"10:00","5a":"11:15","6a":"12:30","7a":"13:45","8a":"15:00"};
+
+var hoy=new Date();hoy.setHours(0,0,0,0);
+function addD(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function mismaFecha(a,b){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();}
+var DIAS=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];var DIASL=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+function fCorta(d){return DIAS[d.getDay()]+" "+String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0");}
+function hm2min(h){var p=h.split(":");return +p[0]*60+ +p[1];}
+function min2hm(m){m=((m%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");}
+function sumarH(h,min){return min2hm(hm2min(h)+min);}
+
+function roundRobin(n){var idx=[];for(var i=0;i<n;i++)idx.push(i);var rondas=[];
+ for(var r=0;r<n-1;r++){var pares=[];for(var j=0;j<n/2;j++){var a=idx[j],b=idx[n-1-j];pares.push((r+j)%2?[b,a]:[a,b]);}
+  rondas.push(pares);idx.splice(1,0,idx.pop());}
+ return rondas;}
+
+function goles(max){return Math.floor(R()*R()*(max||8));}
+
+function genEventos(m,gl,gv,hasta){
+ // hasta: {per:'1T'|'2T', reloj:n} limita goles; null = partido completo
+ var lista=[];var tot=[];for(var i=0;i<gl;i++)tot.push("L");for(i=0;i<gv;i++)tot.push("V");
+ tot.forEach(function(lado){var per,reloj;
+  if(hasta&&hasta.per==="1T"){per="1T";reloj=hasta.reloj+1+Math.floor(R()*(19-hasta.reloj));}
+  else if(hasta&&hasta.per==="ET"){per="1T";reloj=Math.floor(R()*20);}
+  else if(hasta&&hasta.per==="2T"){per=R()<.5?"1T":"2T";reloj=per==="1T"?Math.floor(R()*20):hasta.reloj+1+Math.floor(R()*(19-hasta.reloj));}
+  else{per=R()<.5?"1T":"2T";reloj=Math.floor(R()*20);}
+  lista.push({lado:lado,per:per,reloj:Math.min(19,reloj)});});
+ lista.sort(function(a,b){return a.per===b.per?b.reloj-a.reloj:(a.per==="1T"?-1:1);});
+ var cl=0,cv=0,ini=hm2min(m.hora);
+ var quien=[{n:m.delL,r:"Delegado de "+m.L},{n:m.delL,r:"Delegado de "+m.L},{n:m.delL,r:"Delegado de "+m.L},{n:m.prensa,r:"Prensa"},{n:m.veedor,r:"Oficial de Partido / Veedor"}];
+ if(m.cat!=="1a")quien=[{n:m.delL,r:"Delegado de "+m.L}];
+ lista.forEach(function(g){if(g.lado==="L")cl++;else cv++;
+  var off=(g.per==="1T"?0:45)+Math.round((20-g.reloj)*1.5)+1;var q=pick(quien);
+  g.parcial=cl+"-"+cv;g.quien=q;g.hora=min2hm(ini+off);});
+ return lista;}
+
+var PARTIDOS=[];
+function cargarResultado(m,e,cat){
+ if(e==="finV"||e==="finN"){m.est="fin";m.valid=e==="finV";m.gl=goles();m.gv=goles();m.ev=genEventos(m,m.gl,m.gv,null);
+   m.horaFin=sumarH(m.hora,cat==="1a"||cat==="3a"?95:70);
+   if(m.valid){m.validador=pick(["Referente","Comisión"]);m.validadorNom=persona();m.horaVal=sumarH(m.horaFin,40+Math.floor(R()*60));}}
+ else if(e==="vivo1"){m.est="vivo";m.per="1T";m.reloj=6+Math.floor(R()*10);m.gl=goles(4);m.gv=goles(4);m.ev=genEventos(m,m.gl,m.gv,{per:"1T",reloj:m.reloj});}
+ else if(e==="vivo2"){m.est="vivo";m.per="2T";m.reloj=3+Math.floor(R()*12);m.gl=goles(6);m.gv=goles(6);m.ev=genEventos(m,m.gl,m.gv,{per:"2T",reloj:m.reloj});}
+ else if(e==="et"){m.est="et";m.gl=goles(4);m.gv=goles(4);m.ev=genEventos(m,m.gl,m.gv,{per:"ET",reloj:0});}
+ else{m.est="prog";}}
+function genLiga(t,rama){
+ if(t.eq.length%2)t.eq.push("Libre");
+ var rondas=roundRobin(t.eq.length);t.fechas=rondas.length;var off=t.off||0;
+ rondas.forEach(function(pares,fi){var fecha=fi+1;
+  pares.forEach(function(par,pi){
+   if(t.eq[par[0]]==="Libre"||t.eq[par[1]]==="Libre")return;
+   var dia=off?0:pi%2, k=Math.floor(pi/2);
+   var base=addD(hoy,7*(fecha-t.fa)+dia+off);
+   var esc;
+   if(fecha<t.fa)esc=(fecha===t.fa-1&&R()<.15)?"finN":"finV";
+   else if(fecha>t.fa||dia===1||off)esc="prog";
+   else esc=(t.hoy&&t.hoy[k])||"prog";
+   var hora1=(!off&&dia===0&&fecha===t.fa&&t.horas)?(t.horas[k]||"21:00"):pick(["19:00","19:30","20:00","20:30","21:00"]);
+   var delL=persona(),delV=persona(),prensa=persona(),veedor=persona();
+   t.cats.forEach(function(cat){
+    var m={id:t.id+"-"+fecha+"-"+pi+"-"+cat,t:t,fecha:fecha,cat:cat,L:t.eq[par[0]],V:t.eq[par[1]],date:base,delL:delL,delV:delV,prensa:prensa,veedor:veedor};
+    m.hora=cat==="1a"?hora1:(cat==="3a"?sumarH(hora1,90):HORA_INF[cat]);
+    var e=esc;
+    if(cat!=="1a"&&fecha===t.fa&&dia===0&&!off){
+     if(cat==="3a")e=(esc==="finV"||esc==="finN")?(R()<.5?"finV":"finN"):"prog";
+     else e=R()<.5?"finV":"finN";}
+    if(cat!=="1a"&&(e==="vivo1"||e==="vivo2"||e==="et"))e="prog";
+    cargarResultado(m,e,cat);PARTIDOS.push(m);});
+  });});}
+/* Primera A masculino: partidos y resultados reales de 1a tomados de POP (temporada 2026, fechas 9 a 34).
+   Lo que falta (fechas 1 a 8, partidos sin oficial, resultados no cargados, 3a e inferiores) es inventado. */
+var MA_REAL=[[1,"2026-03-13","20:00","Jorge Newbery","Estudiantil Porteño",1,4,0],[1,"2026-03-13","20:00","Pinocho","América del Sud",3,4,0],[1,"2026-03-13","20:30","Glorias de Tigre","Barracas Central",0,1,0],[1,"2026-03-13","21:00","Estrella de Boedo","17 de Agosto",7,7,0],[1,"2026-03-14","19:30","River","Newell's",1,3,0],[1,"2026-03-14","19:30","Boca","San Lorenzo",2,3,0],[1,"2026-03-14","20:30","Ferro","Independiente",8,1,0],[1,"2026-03-14","21:00","Camioneros","Racing",3,7,0],[1,"2026-03-15","19:00","Hebraica","Kimberley",4,2,0],[2,"2026-03-20","19:00","Independiente","San Lorenzo",4,0,0],[2,"2026-03-20","19:30","Jorge Newbery","Glorias de Tigre",3,1,0],[2,"2026-03-20","20:00","17 de Agosto","Kimberley",5,1,0],[2,"2026-03-20","20:00","Pinocho","River",1,5,0],[2,"2026-03-20","21:00","Camioneros","América del Sud",2,1,0],[2,"2026-03-21","19:00","Barracas Central","Estudiantil Porteño",0,6,0],[2,"2026-03-21","19:00","Newell's","Ferro",5,6,0],[2,"2026-03-21","20:30","Boca","Racing",2,3,0],[2,"2026-03-22","21:00","Estrella de Boedo","Hebraica",1,1,0],[3,"2026-03-27","20:00","Racing","Glorias de Tigre",1,2,0],[3,"2026-03-28","19:30","Independiente","Newell's",2,4,0],[3,"2026-03-28","20:30","Hebraica","Camioneros",5,2,0],[3,"2026-03-28","20:30","River","Boca",4,2,0],[3,"2026-03-29","19:00","Jorge Newbery","Pinocho",1,1,0],[3,"2026-03-29","19:00","San Lorenzo","América del Sud",1,3,0],[3,"2026-03-29","19:30","Kimberley","Barracas Central",3,5,0],[3,"2026-03-29","19:30","Estrella de Boedo","17 de Agosto",3,3,0],[3,"2026-03-29","21:00","Ferro","Estudiantil Porteño",2,3,0],[4,"2026-04-03","19:00","Racing","Ferro",1,3,0],[4,"2026-04-03","19:00","Independiente","River",1,4,0],[4,"2026-04-03","20:30","Hebraica","Glorias de Tigre",0,1,0],[4,"2026-04-04","19:00","Jorge Newbery","Camioneros",2,1,0],[4,"2026-04-04","20:30","17 de Agosto","América del Sud",2,4,0],[4,"2026-04-04","21:00","Estudiantil Porteño","Newell's",2,1,0],[4,"2026-04-04","21:00","Pinocho","Boca",4,9,0],[4,"2026-04-04","21:00","Estrella de Boedo","Barracas Central",7,6,0],[4,"2026-04-05","20:00","San Lorenzo","Kimberley",5,0,0],[5,"2026-04-10","20:30","17 de Agosto","Racing",1,1,0],[5,"2026-04-11","19:30","Ferro","Boca",1,2,0],[5,"2026-04-11","19:30","Barracas Central","Jorge Newbery",3,4,0],[5,"2026-04-11","19:30","Pinocho","Kimberley",2,1,0],[5,"2026-04-11","20:30","Camioneros","San Lorenzo",1,1,0],[5,"2026-04-12","19:00","América del Sud","River",3,2,0],[5,"2026-04-12","19:30","Estudiantil Porteño","Hebraica",3,4,0],[5,"2026-04-12","20:00","Estrella de Boedo","Independiente",2,3,0],[5,"2026-04-12","21:00","Glorias de Tigre","Newell's",2,4,0],[6,"2026-04-17","19:30","Jorge Newbery","Racing",1,2,0],[6,"2026-04-17","20:30","Hebraica","Boca",2,1,0],[6,"2026-04-18","19:30","Barracas Central","Pinocho",2,4,0],[6,"2026-04-18","20:30","Glorias de Tigre","Independiente",2,3,0],[6,"2026-04-18","21:00","Estrella de Boedo","River",5,3,0],[6,"2026-04-19","19:00","Newell's","Estudiantil Porteño",3,1,0],[6,"2026-04-19","20:00","América del Sud","Kimberley",4,2,0],[6,"2026-04-19","20:00","17 de Agosto","Camioneros",8,6,0],[6,"2026-04-19","21:00","San Lorenzo","Ferro",5,1,0],[7,"2026-04-24","20:00","Jorge Newbery","Boca",1,0,0],[7,"2026-04-24","21:00","Ferro","Racing",5,3,0],[7,"2026-04-25","19:30","Hebraica","Estrella de Boedo",6,6,0],[7,"2026-04-26","19:00","San Lorenzo","River",6,2,0],[7,"2026-04-26","19:00","Kimberley","Estudiantil Porteño",1,0,0],[7,"2026-04-26","19:00","Barracas Central","Camioneros",0,2,0],[7,"2026-04-26","20:00","Independiente","América del Sud",2,1,0],[7,"2026-04-26","20:30","Newell's","17 de Agosto",3,0,0],[7,"2026-04-26","20:30","Glorias de Tigre","Pinocho",1,4,0],[8,"2026-05-01","20:00","Boca","San Lorenzo",4,2,0],[8,"2026-05-01","20:00","Barracas Central","River",2,3,0],[8,"2026-05-01","20:00","Independiente","Camioneros",6,2,0],[8,"2026-05-01","20:30","Estrella de Boedo","Kimberley",2,0,0],[8,"2026-05-01","21:00","Newell's","Ferro",1,1,0],[8,"2026-05-01","21:00","Estudiantil Porteño","Hebraica",1,1,0],[8,"2026-05-02","19:00","Jorge Newbery","América del Sud",4,3,0],[8,"2026-05-02","20:00","Glorias de Tigre","17 de Agosto",3,4,0],[8,"2026-05-03","20:00","Pinocho","Racing",1,6,0],[9,"2026-05-08","20:00","Ferro","Kimberley",2,5,2],[9,"2026-05-08","20:00","Racing","Estudiantil Porteño",0,2,2],[9,"2026-05-09","19:30","River","Pinocho",1,1,2],[9,"2026-05-09","20:30","América del Sud","Barracas Central",3,2,2],[9,"2026-05-09","22:00","Independiente","Glorias de Tigre",1,0,2],[9,"2026-05-10","22:00","Jorge Newbery","Hebraica",4,1,2],[9,"2026-05-11","17:30","17 de Agosto","Newell's",2,3,2],[9,"2026-05-11","20:30","San Lorenzo","Estrella de Boedo",2,2,2],[9,"2026-06-23","21:30","Boca","Camioneros",2,1,2],[10,"2026-05-15","20:00","Glorias de Tigre","América del Sud",4,7,0],[10,"2026-05-15","20:30","Jorge Newbery","San Lorenzo",3,2,2],[10,"2026-05-15","22:00","Estudiantil Porteño","Boca",5,0,2],[10,"2026-05-16","19:30","Ferro","Hebraica",2,3,0],[10,"2026-05-16","20:00","Camioneros","Independiente",1,8,2],[10,"2026-05-16","20:30","Newell's","River",2,2,0],[10,"2026-05-16","21:30","Pinocho","Estrella de Boedo",2,3,2],[10,"2026-05-17","19:00","Barracas Central","17 de Agosto",2,2,2],[10,"2026-05-17","19:15","Kimberley","Racing",2,2,2],[11,"2026-05-19","20:30","San Lorenzo","Pinocho",3,7,2],[11,"2026-05-20","20:00","Estrella de Boedo","Glorias de Tigre",1,1,2],[11,"2026-05-20","20:30","América del Sud","Jorge Newbery",3,4,2],[11,"2026-05-20","20:30","Independiente","Estudiantil Porteño",2,2,2],[11,"2026-05-20","20:30","River","Camioneros",2,6,2],[11,"2026-05-20","20:30","17 de Agosto","Hebraica",0,2,2],[11,"2026-05-20","21:30","Boca","Kimberley",0,0,2],[11,"2026-05-20","21:30","Racing","Newell's",2,2,2],[11,"2026-05-21","20:00","Ferro","Barracas Central",7,3,2],[12,"2026-05-22","20:00","Camioneros","Estrella de Boedo",6,3,2],[12,"2026-05-23","19:00","Jorge Newbery","17 de Agosto",1,1,2],[12,"2026-05-23","20:00","Hebraica","Ferro",6,3,2],[12,"2026-05-24","12:30","Barracas Central","Racing",4,1,2],[12,"2026-05-24","14:00","Estudiantil Porteño","River",5,5,2],[12,"2026-05-24","18:30","Kimberley","Independiente",1,1,2],[12,"2026-05-24","19:30","América del Sud","San Lorenzo",1,2,2],[12,"2026-05-25","20:30","Pinocho","Glorias de Tigre",1,7,0],[12,"2026-06-25","20:30","Newell's","Boca",3,7,2],[13,"2026-05-30","14:30","Independiente","Newell's",4,0,2],[13,"2026-05-30","19:00","Estrella de Boedo","Estudiantil Porteño",2,0,2],[13,"2026-05-30","19:30","River","Kimberley",1,0,2],[13,"2026-05-30","19:30","Racing","Hebraica",0,3,2],[13,"2026-05-31","19:00","Pinocho","Camioneros",0,3,2],[13,"2026-05-31","19:30","17 de Agosto","América del Sud",4,5,2],[13,"2026-05-31","19:30","Ferro","Jorge Newbery",2,2,2],[13,"2026-05-31","20:30","San Lorenzo","Glorias de Tigre",7,8,2],[13,"2026-07-08","20:00","Boca","Barracas Central",6,8,2],[14,"2026-06-05","20:30","América del Sud","Ferro",2,0,2],[14,"2026-06-05","20:30","Barracas Central","Independiente",5,1,2],[14,"2026-06-05","21:00","17 de Agosto","San Lorenzo",1,2,2],[14,"2026-06-05","22:00","Estudiantil Porteño","Pinocho",2,2,2],[14,"2026-06-06","20:00","River","Hebraica",6,3,0],[14,"2026-06-06","20:30","Newell's","Boca",0,4,2],[14,"2026-06-07","18:30","Kimberley","Estrella de Boedo",5,2,2],[14,"2026-06-07","20:00","Camioneros","Glorias de Tigre",3,1,2],[14,"2026-06-08","20:30","Jorge Newbery","Racing",1,1,2],[15,"2026-06-12","20:30","Independiente","Hebraica",0,5,2],[15,"2026-06-13","16:30","Estrella de Boedo","Newell's",4,8,2],[15,"2026-06-13","20:00","River","Barracas Central",7,3,2],[15,"2026-06-14","13:00","Racing","América del Sud",1,2,2],[15,"2026-06-14","19:30","Pinocho","Kimberley",0,0,2],[15,"2026-06-14","19:30","San Lorenzo","Glorias de Tigre",2,2,0],[15,"2026-06-14","20:30","Boca","Jorge Newbery",2,2,2],[15,"2026-06-14","21:15","Ferro","17 de Agosto",2,1,2],[15,"2026-06-15","20:30","Estudiantil Porteño","Camioneros",2,7,0],[16,"2026-06-17","20:00","17 de Agosto","Racing",1,3,2],[16,"2026-06-17","20:00","Newell's","Pinocho",4,6,2],[16,"2026-06-17","20:30","Jorge Newbery","Independiente",4,1,2],[16,"2026-06-17","20:30","Barracas Central","Estrella de Boedo",1,1,2],[16,"2026-06-17","21:30","Hebraica","River",5,3,2],[16,"2026-06-17","21:30","Kimberley","Glorias de Tigre",1,1,2],[16,"2026-06-17","22:00","América del Sud","Boca",9,6,2],[16,"2026-06-18","20:00","Ferro","San Lorenzo",3,4,2],[16,"2026-06-18","20:30","Estudiantil Porteño","Camioneros",1,6,2],[17,"2026-06-19","20:30","Independiente","América del Sud",3,2,2],[17,"2026-06-20","21:00","Newell's","Hebraica",1,2,0],[17,"2026-06-21","17:00","River","Jorge Newbery",3,5,2],[17,"2026-06-21","18:00","Pinocho","Barracas Central",1,2,2],[17,"2026-06-21","19:00","Estrella de Boedo","Racing",3,2,0],[17,"2026-06-21","20:00","Camioneros","Kimberley",5,1,2],[17,"2026-06-21","20:00","Boca","17 de Agosto",4,1,2],[17,"2026-06-21","20:30","San Lorenzo","Estudiantil Porteño",1,2,2],[17,"2026-06-22","21:00","Ferro","Glorias de Tigre",2,2,0],[18,"2026-06-26","20:30","Independiente","17 de Agosto",4,1,2],[18,"2026-06-26","22:00","Estudiantil Porteño","Kimberley",3,7,2],[18,"2026-06-27","16:00","Camioneros","Newell's",2,1,2],[18,"2026-06-27","17:00","River","América del Sud",3,6,2],[18,"2026-06-27","19:15","Pinocho","Hebraica",5,1,2],[18,"2026-06-28","19:00","Estrella de Boedo","Jorge Newbery",3,1,2],[18,"2026-06-28","20:00","Boca","Ferro",8,8,2],[18,"2026-06-28","21:00","Racing","San Lorenzo",4,2,2],[18,"2026-06-28","21:00","Barracas Central","Glorias de Tigre",4,8,0],[19,"2026-07-04","15:15","Ferro","Independiente",4,6,2],[19,"2026-07-04","18:00","Jorge Newbery","Pinocho",2,3,2],[19,"2026-07-04","19:00","Boca","Glorias de Tigre",2,8,0],[19,"2026-07-05","18:30","Barracas Central","Camioneros",2,2,2],[19,"2026-07-05","19:00","América del Sud","Estrella de Boedo",5,6,2],[19,"2026-07-05","19:30","San Lorenzo","Kimberley",5,3,2],[19,"2026-07-05","20:00","Racing","Newell's",1,4,0],[19,"2026-07-05","20:30","17 de Agosto","River",1,6,2],[19,"2026-07-05","20:30","Estudiantil Porteño","Hebraica",0,4,0],[20,"2026-07-07","19:30","San Lorenzo","Jorge Newbery",3,3,0],[20,"2026-07-07","20:00","Independiente","Racing",1,1,2],[20,"2026-07-08","19:00","Estrella de Boedo","Boca",3,5,0],[20,"2026-07-08","20:00","17 de Agosto","Barracas Central",2,4,0],[20,"2026-07-08","20:30","River","Ferro",1,4,2],[20,"2026-07-08","20:30","Camioneros","Hebraica",1,1,2],[20,"2026-07-08","20:30","Kimberley","Newell's",2,2,2],[20,"2026-07-08","21:00","Estudiantil Porteño","Glorias de Tigre",2,2,0],[20,"2026-07-08","22:00","Pinocho","América del Sud",1,5,2],[21,"2026-07-11","15:15","San Lorenzo","Newell's",1,1,2],[21,"2026-07-11","19:30","Hebraica","Jorge Newbery",7,0,0],[21,"2026-07-12","16:00","Boca","Independiente",7,3,2],[21,"2026-07-12","19:00","América del Sud","Glorias de Tigre",2,2,2],[21,"2026-07-12","19:00","Ferro","Estrella de Boedo",2,4,2],[21,"2026-07-12","19:00","Racing","River",2,2,2],[21,"2026-07-12","20:00","Barracas Central","Kimberley",2,1,2],[21,"2026-07-12","20:30","17 de Agosto","Pinocho",2,2,2],[21,"2026-07-13","20:30","Camioneros","Estudiantil Porteño",1,1,0],[22,"2026-07-17","19:00","Newell's","Barracas Central",1,3,2],[22,"2026-07-18","21:00","River","Boca",0,2,1],[22,"2026-07-23","21:00","17 de Agosto","Estudiantil Porteño",2,2,0],[22,"2026-07-24","19:00","Jorge Newbery","Glorias de Tigre",4,3,0],[22,"2026-07-24","20:00","Pinocho","Ferro",5,2,2],[22,"2026-07-24","20:00","Estrella de Boedo","Racing",2,2,2],[22,"2026-07-24","20:00","Independiente","San Lorenzo",1,0,0],[22,"2026-08-05","20:30","Camioneros","América del Sud",3,3,2],[22,"2026-08-05","20:30","Kimberley","Hebraica",2,0,1],[23,"2026-08-01","19:00","Jorge Newbery","Kimberley",2,1,2],[23,"2026-08-01","20:30","América del Sud","Estudiantil Porteño",3,5,1],[23,"2026-08-02","18:00","Hebraica","Newell's",4,4,2],[23,"2026-08-02","18:00","Ferro","Glorias de Tigre",1,1,2],[23,"2026-08-02","19:30","San Lorenzo","Barracas Central",3,3,2],[23,"2026-08-02","20:00","Boca","Estrella de Boedo",4,1,1],[23,"2026-08-02","20:30","Racing","Pinocho",2,2,2],[23,"2026-08-02","20:30","17 de Agosto","Camioneros",1,8,2],[23,"2026-10-17","20:00","Independiente","River",4,3,1],[24,"2026-07-17","17:30","Newell's","Jorge Newbery",6,3,1],[24,"2026-08-06","18:30","Camioneros","Ferro",2,1,1],[24,"2026-08-07","22:00","Estudiantil Porteño","17 de Agosto",0,2,1],[24,"2026-08-08","18:30","Estrella de Boedo","Independiente",3,3,1],[24,"2026-08-08","19:30","River","San Lorenzo",1,1,1],[24,"2026-08-08","20:00","Pinocho","Boca",2,2,1],[24,"2026-08-08","20:30","Racing","Glorias de Tigre",0,5,0],[24,"2026-08-09","20:00","Kimberley","América del Sud",5,7,1],[24,"2026-08-10","20:00","Barracas Central","Hebraica",4,5,1],[25,"2026-08-14","20:00","Ferro","Estudiantil Porteño",1,5,0],[25,"2026-08-14","20:30","Independiente","Pinocho",5,3,1],[25,"2026-08-14","20:30","17 de Agosto","Kimberley",3,0,1],[25,"2026-08-14","22:00","Boca","Glorias de Tigre",6,6,1],[25,"2026-08-15","19:30","River","Estrella de Boedo",5,3,1],[25,"2026-08-15","20:30","San Lorenzo","Hebraica",4,5,1],[25,"2026-08-16","20:00","Jorge Newbery","Barracas Central",3,1,0],[25,"2026-08-16","21:00","Racing","Camioneros",1,9,0],[25,"2026-09-29","20:00","América del Sud","Newell's",1,0,1],[26,"2026-08-18","22:00","Estudiantil Porteño","Racing",1,1,1],[26,"2026-08-19","19:30","17 de Agosto","Glorias de Tigre",8,1,0],[26,"2026-08-19","20:00","Kimberley","Ferro",3,3,1],[26,"2026-08-19","20:00","Pinocho","River",2,3,1],[26,"2026-08-19","20:00","Estrella de Boedo","San Lorenzo",2,1,1],[26,"2026-08-19","20:30","Barracas Central","América del Sud",3,0,1],[26,"2026-08-19","20:30","Boca","Independiente",5,6,0],[26,"2026-08-19","22:00","Hebraica","Jorge Newbery",5,3,1],[26,"2026-08-20","21:00","Newell's","Camioneros",2,4,0],[27,"2026-08-21","19:00","Camioneros","Ferro",2,1,0],[27,"2026-08-21","20:30","Racing","Kimberley",2,6,1],[27,"2026-08-22","18:30","Estrella de Boedo","Pinocho",2,2,1],[27,"2026-08-22","20:00","América del Sud","Hebraica",3,1,1],[27,"2026-08-22","20:00","Independiente","Boca",5,3,0],[27,"2026-08-22","20:30","San Lorenzo","Newell's",2,4,0],[27,"2026-08-22","21:00","Estudiantil Porteño","Jorge Newbery",0,2,0],[27,"2026-08-23","12:00","17 de Agosto","Barracas Central",2,2,1],[27,"2026-08-23","14:00","River","Glorias de Tigre",4,4,1],[28,"2026-08-28","20:00","Glorias de Tigre","Estrella de Boedo",5,1,1],[28,"2026-08-29","19:00","Jorge Newbery","Ferro",2,0,0],[28,"2026-08-29","20:30","Barracas Central","San Lorenzo",1,5,0],[28,"2026-08-29","21:00","Racing","América del Sud",0,2,0],[28,"2026-08-30","18:30","Estudiantil Porteño","Independiente",2,4,1],[28,"2026-08-30","19:30","Kimberley","Boca",2,2,1],[28,"2026-08-30","19:30","Pinocho","Newell's",3,6,0],[28,"2026-08-30","20:30","River","Camioneros",1,6,0],[28,"2026-08-31","20:30","17 de Agosto","Hebraica",7,2,0],[29,"2026-09-05","18:30","Estrella de Boedo","Camioneros",3,3,1],[29,"2026-09-05","19:00","Independiente","Kimberley",4,4,1],[29,"2026-09-05","19:00","San Lorenzo","River",1,6,0],[29,"2026-09-05","19:30","América del Sud","Hebraica",9,4,0],[29,"2026-09-05","20:00","Newell's","Ferro",1,1,0],[29,"2026-09-05","20:30","Racing","Barracas Central",1,2,1],[29,"2026-09-05","21:00","Estudiantil Porteño","Boca",9,5,0],[29,"2026-09-06","20:30","17 de Agosto","Jorge Newbery",7,3,1],[29,"2026-09-07","20:30","Pinocho","Glorias de Tigre",3,6,1],[30,"2026-09-11","20:00","Estudiantil Porteño","Estrella de Boedo",7,3,1],[30,"2026-09-11","20:30","Barracas Central","Boca",3,4,1],[30,"2026-09-12","21:00","17 de Agosto","Independiente",1,7,0],[30,"2026-09-13","19:00","Kimberley","River",3,1,1],[30,"2026-09-13","19:00","Pinocho","Ferro",1,6,0],[30,"2026-09-13","20:00","América del Sud","San Lorenzo",2,0,0],[30,"2026-09-13","20:30","Newell's","Glorias de Tigre",7,1,0],[30,"2026-09-13","21:30","Hebraica","Racing",2,7,1],[30,"2026-09-14","21:00","Camioneros","Jorge Newbery",1,1,0],[31,"2026-09-19","18:30","Estrella de Boedo","Kimberley",2,2,1],[31,"2026-09-19","19:30","América del Sud","Ferro",3,4,0],[31,"2026-09-20","19:00","Pinocho","Estudiantil Porteño",4,4,1],[31,"2026-09-20","20:00","17 de Agosto","River",0,2,0],[31,"2026-09-20","20:30","Hebraica","Boca",4,1,0],[31,"2026-09-20","20:30","Newell's","Jorge Newbery",4,2,0],[31,"2026-09-20","21:00","Racing","Glorias de Tigre",0,2,0],[31,"2026-09-21","20:30","Independiente","Barracas Central",3,5,1],[31,"2026-09-26","20:00","Camioneros","San Lorenzo",4,0,1],[32,"2026-09-25","19:30","Racing","San Lorenzo",1,4,0],[32,"2026-09-25","20:00","Estrella de Boedo","América del Sud",9,9,0],[32,"2026-09-25","20:30","Boca","River",6,5,0],[32,"2026-09-25","22:00","Estudiantil Porteño","Glorias de Tigre",3,1,1],[32,"2026-09-26","19:00","Pinocho","Camioneros",0,2,0],[32,"2026-09-26","19:30","Jorge Newbery","Kimberley",1,2,0],[32,"2026-09-26","20:00","Hebraica","Independiente",3,3,1],[32,"2026-09-27","19:30","Newell's","Barracas Central",3,1,0],[32,"2026-09-27","20:30","17 de Agosto","Ferro",2,2,1],[33,"2026-10-02","19:30","Estrella de Boedo","Ferro",1,1,0],[33,"2026-10-02","20:30","Independiente","Jorge Newbery",3,7,1],[33,"2026-10-02","21:30","Glorias de Tigre","Kimberley",7,6,1],[33,"2026-10-03","15:00","River","Hebraica",8,2,2],[33,"2026-10-03","19:00","17 de Agosto","Racing",2,1,0],[33,"2026-10-03","20:30","San Lorenzo","Barracas Central",2,1,0],[33,"2026-10-04","20:00","Camioneros","Estudiantil Porteño",3,3,1],[33,"2026-10-04","20:15","Boca","América del Sud",1,3,1],[33,"2026-10-04","20:30","Pinocho","Newell's",3,2,0],[34,"2026-10-09","20:30","17 de Agosto","Boca",3,2,1],[34,"2026-10-10","19:00","Independiente","Pinocho",7,7,0],[34,"2026-10-10","19:30","Ferro","Barracas Central",3,0,0],[34,"2026-10-10","20:00","Estudiantil Porteño","San Lorenzo",0,1,1],[34,"2026-10-10","20:00","River","Racing",1,6,0],[34,"2026-10-10","20:30","Kimberley","Camioneros",3,1,1],[34,"2026-10-11","20:00","Hebraica","Glorias de Tigre",2,1,0],[34,"2026-10-11","20:00","Jorge Newbery","América del Sud",1,1,0],[34,"2026-10-11","21:00","Newell's","Estrella de Boedo",2,8,0]];
+function genReal(t){
+ t.fechas=34;
+ MA_REAL.forEach(function(r,i){
+  var p=r[1].split("-"),date=new Date(+p[0],+p[1]-1,+p[2]);
+  var delL=persona(),delV=persona(),prensa=persona(),veedor=persona();
+  t.cats.forEach(function(cat){
+   var m={id:t.id+"-"+r[0]+"-"+i+"-"+cat,t:t,fecha:r[0],cat:cat,L:r[3],V:r[4],date:date,delL:delL,delV:delV,prensa:prensa,veedor:veedor};
+   m.hora=cat==="1a"?r[2]:(cat==="3a"?sumarH(r[2],90):HORA_INF[cat]);
+   if(date>=hoy){cargarResultado(m,"prog",cat);}
+   else if(cat==="1a"){m.est="fin";m.valid=true;m.gl=r[5];m.gv=r[6];m.real=r[7]===1;m.ev=genEventos(m,m.gl,m.gv,null);
+    m.horaFin=sumarH(m.hora,95);m.validador=pick(["Referente","Comisión"]);m.validadorNom=persona();m.horaVal=sumarH(m.horaFin,40+Math.floor(R()*60));}
+   else cargarResultado(m,"finV",cat);
+   PARTIDOS.push(m);});});}
+function genElim(t){
+ t.fechas=t.inst.length;var vivos=t.eq.slice(),conocidos=true;
+ t.inst.forEach(function(ins,ii){
+  var base=addD(hoy,ins.d),ganadores=[];
+  for(var j=0;j<vivos.length;j+=2){
+   var m={id:t.id+"-"+(ii+1)+"-"+j,t:t,fecha:ii+1,inst:ins.n,cat:"1a",L:vivos[j],V:vivos[j+1],date:base,hora:pick(["19:00","20:00","21:00"]),delL:persona(),delV:persona(),prensa:persona(),veedor:persona()};
+   if(conocidos&&ins.d<0){cargarResultado(m,"finV","1a");
+    if(m.gl===m.gv){var a=3+Math.floor(R()*3),b=a-1-Math.floor(R()*2);if(R()<.5){m.pen=a+"-"+b;ganadores.push(m.L);}else{m.pen=b+"-"+a;ganadores.push(m.V);}}
+    else ganadores.push(m.gl>m.gv?m.L:m.V);}
+   else{m.est="prog";ganadores.push("Ganador "+(ii+1)+"."+(j/2+1));}
+   PARTIDOS.push(m);}
+  if(!(ins.d<0))conocidos=false;
+  vivos=ganadores;});}
+["M","F"].forEach(function(rama){
+ TORNEOS[rama].forEach(function(t){t.rama=rama;if(t.real)genReal(t);else if(t.tipo==="elim")genElim(t);else genLiga(t,rama);});});
+function etiqFecha(m){return m.inst?m.inst:"Fecha "+m.fecha;}
+
+/* ---------- estado ---------- */
+var S={rama:"M",vista:"A",dia:new Date(hoy),filtro:"todos",cerrados:{},torneo:{M:"MA",F:"FA"},grupo:"pri",cat:"3a",fecha:{},comision:false};
+function torneoAct(){return TORNEOS[S.rama].filter(function(t){return t.id===S.torneo[S.rama];})[0];}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+
+/* ---------- piezas ---------- */
+function celdaEstado(m){
+ if(m.est==="vivo")return '<div class="est vivo"><span>'+m.per+" "+String(m.reloj).padStart(2,"0")+"'</span><small class=\"hact\">"+horaAct(m)+"</small></div>";
+ if(m.est==="et")return '<div class="est et"><span>ET</span><small class="hact">'+horaAct(m)+"</small></div>";
+ if(m.est==="fin")return '<div class="est">Final</div>';
+ return '<div class="est">'+m.hora+"</div>";}
+function claseSc(m){return m.est==="prog"?"prog":(m.est==="vivo"||m.est==="et")?"vivo":(m.valid?"":"pend");}
+function textoSc(m){return m.est==="prog"?"-":m.gl+" - "+m.gv+(m.pen?'<small class="pen">('+m.pen+' pen.)</small>':"");}
+function horaAct(m){var ini=hm2min(m.hora);if(m.est==="et")return min2hm(ini+28);return min2hm(ini+(m.per==="2T"?45:0)+Math.round((20-m.reloj)*1.5)+1);}
+function filaPartido(m,conAct,yo){
+ function ce(n){return yo?(n===yo?" yo":" otro"):"";}
+ var h='<button class="p" data-m="'+m.id+'"><div class="prow">'+celdaEstado(m)+'<div class="eq L'+ce(m.L)+'"><span>'+esc(corto(m.L))+'</span></div><div class="sc '+claseSc(m)+'">'+textoSc(m)+'</div><div class="eq'+ce(m.V)+'"><span>'+esc(corto(m.V))+"</span></div></div>";
+  return h+"</button>";}
+
+function etiquetaDia(d){var dif=Math.round((d-hoy)/864e5);
+ if(dif===0)return"Hoy";if(dif===-1)return"Ayer";if(dif===1)return"Mañana";return fCorta(d);}
+function isoDia(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+
+/* ---------- AGENDA ---------- */
+function renderAgenda(){
+ var delDia=PARTIDOS.filter(function(m){return m.t.rama===S.rama&&m.cat==="1a"&&mismaFecha(m.date,S.dia);});
+ var enVivo=delDia.filter(function(m){return m.est==="vivo"||m.est==="et";});
+ var lista=S.filtro==="vivo"?enVivo:delDia;
+ var h='<section class="dia"><div class="dianav"><button class="flecha" id="dAnt" aria-label="Día anterior">‹</button>'+
+  '<div class="dialbl" id="dLbl" role="button" tabindex="0" aria-label="Mantener apretado para abrir el calendario">'+etiquetaDia(S.dia)+' <small>▾</small></div>'+
+  '<button class="flecha" id="dSig" aria-label="Día siguiente">›</button></div>'+
+  '<div class="filtros"><button id="fT" aria-pressed="'+(S.filtro==="todos")+'">TODOS</button><button id="fV" class="vivo" aria-pressed="'+(S.filtro==="vivo")+'">EN VIVO ('+enVivo.length+")</button></div></section>";
+ var hay=false;
+ TORNEOS[S.rama].forEach(function(t){
+  var ps=lista.filter(function(m){return m.t===t;}).sort(function(a,b){return hm2min(a.hora)-hm2min(b.hora);});
+  if(!ps.length)return;hay=true;
+  var cerrado=S.cerrados[t.id];
+  h+='<section class="bloque'+(cerrado?" cerrado":"")+'"><button class="bhead" data-tog="'+t.id+'"><div><h2>'+esc(t.nombre)+'</h2><div class="sub">'+ps.map(etiqFecha).filter(function(x,i,a){return a.indexOf(x)===i;}).join(" · ")+'</div></div><span class="chev">▴</span></button><div class="bbody">'+
+   ps.map(function(m){return filaPartido(m,true);}).join("")+
+   '<button class="bpie" data-sec="'+t.id+'">TABLAS DE '+esc(t.nombre.toUpperCase())+" ›</button></div></section>";});
+ if(!hay)h+='<div class="bloque"><div class="vacio">'+(S.filtro==="vivo"?"No hay partidos de 1a en vivo en este momento.":"No hay partidos de 1a este día.")+"</div></div>";
+ return h;}
+
+/* ---------- TABLAS ---------- */
+function calcTabla(t,cat){
+ var filas={};t.eq.forEach(function(e){if(e==="Libre")return;filas[e]={eq:e,pts:0,j:0,g:0,e:0,p:0,gf:0,gc:0,ult:[],pend:[]};});
+ PARTIDOS.filter(function(m){return m.t===t&&m.cat===cat&&m.est==="fin";}).sort(function(a,b){return a.fecha-b.fecha;}).forEach(function(m){
+  var a=filas[m.L],b=filas[m.V];a.j++;b.j++;a.gf+=m.gl;a.gc+=m.gv;b.gf+=m.gv;b.gc+=m.gl;
+  if(m.gl>m.gv){a.g++;b.p++;a.pts+=3;a.ult.push("V");b.ult.push("D");}
+  else if(m.gl<m.gv){b.g++;a.p++;b.pts+=3;a.ult.push("D");b.ult.push("V");}
+  else{a.e++;b.e++;a.pts++;b.pts++;a.ult.push("E");b.ult.push("E");}
+  if(!m.valid){a.pend.push(m);b.pend.push(m);}});
+ return Object.keys(filas).map(function(k){return filas[k];}).sort(function(x,y){return y.pts-x.pts||(y.gf-y.gc)-(x.gf-x.gc)||y.gf-x.gf||x.eq.localeCompare(y.eq);});}
+
+function renderTablas(){
+ var t=torneoAct();var cats=t.cats.filter(function(c){return c!=="1a";});var tienePri=t.cats.indexOf("1a")>=0;
+ if(cats.indexOf(S.cat)<0)S.cat=cats[0];
+ var grupo=!tienePri?"inf":(!cats.length?"pri":S.grupo);
+ var cat=grupo==="pri"?"1a":S.cat;
+ var h='<div class="selrow"><select id="selT" aria-label="Torneo">'+TORNEOS[S.rama].map(function(x){return'<option value="'+x.id+'"'+(x.id===t.id?" selected":"")+">"+esc(x.nombre)+" · "+(S.rama==="M"?"Masculino":"Femenino")+"</option>";}).join("")+"</select></div>";
+ if(tienePri&&cats.length)h+='<div class="seg"><button id="gP" aria-pressed="'+(grupo==="pri")+'">PRIMERA</button><button id="gI" aria-pressed="'+(grupo==="inf")+'">INFERIORES</button></div>';
+ if(t.tipo==="elim"){
+  t.inst.forEach(function(ins,ii){var ps=PARTIDOS.filter(function(m){return m.t===t&&m.fecha===ii+1;});
+   h+='<section class="tabla lst"><div class="ttit"><span>'+esc(ins.n)+'</span><span style="font-size:12px;color:var(--muted);font-family:var(--body);text-transform:none;font-weight:500">'+fCorta(ps[0].date)+"</span></div>"+ps.map(function(m){return filaPartido(m,false);}).join("")+"</section>";});
+  return h+'<div class="leyenda"><span style="--c:var(--muted)">Eliminación directa: sin tabla de posiciones</span></div>';}
+ var fk=t.id;if(!S.fecha[fk])S.fecha[fk]=t.fa;var fecha=S.fecha[fk];
+ if(grupo==="inf")h+='<div class="chips">'+cats.map(function(c){return'<button data-cat="'+c+'" aria-pressed="'+(c===S.cat)+'">'+c+"</button>";}).join("")+"</div>";
+ var filas=calcTabla(t,cat);
+ h+='<section class="tabla"><div class="ttit"><span>'+esc(t.nombre)+" · "+cat+'</span></div><div class="scrollx"><table><thead><tr><th class="fija f1">#</th><th class="eqt fija f2">Equipo</th><th class="fija f3">Pts</th><th class="fija f4">J</th><th>GF</th><th>GC</th><th>DG</th><th>G</th><th>E</th><th>P</th><th>Últimos 3</th>'+(S.comision?"<th>Val.</th>":"")+"</tr></thead><tbody>"+
+  filas.map(function(f,i){var dg=f.gf-f.gc;return'<tr><td class="pos fija f1">'+(i+1)+'</td><td class="eqt fija f2"><button data-eq="'+esc(f.eq)+'">'+esc(corto(f.eq))+'</button></td><td class="pts fija f3">'+f.pts+'</td><td class="fija f4"><button class="jbtn" data-eq="'+esc(f.eq)+'" aria-label="Partidos jugados de '+esc(f.eq)+'">'+f.j+"</button></td><td>"+f.gf+"</td><td>"+f.gc+"</td><td>"+(dg>0?"+":"")+dg+"</td><td>"+f.g+"</td><td>"+f.e+"</td><td>"+f.p+'</td><td><span class="ult">'+f.ult.slice(-3).map(function(u){return'<i class="'+u+'">'+u+"</i>";}).join("")+"</span></td>"+
+   (S.comision?"<td>"+(f.pend.length?'<button class="rojo" data-pend="'+esc(f.eq)+'" aria-label="Ver partidos sin validar de '+esc(f.eq)+'"></button>':"")+"</td>":"")+"</tr>";}).join("")+
+  "</tbody></table></div></section>";
+ // fecha
+ var ps=PARTIDOS.filter(function(m){return m.t===t&&m.cat===cat&&m.fecha===fecha;}).sort(function(a,b){return a.date-b.date||hm2min(a.hora)-hm2min(b.hora);});
+ var opts="";for(var f=1;f<=t.fechas;f++)opts+='<option value="'+f+'"'+(f===fecha?" selected":"")+">Fecha "+f+"</option>";
+ h+='<section class="tabla lst"><div class="fnav"><button class="flecha" id="fAnt" aria-label="Fecha anterior">‹</button><label class="flbl">FECHA '+fecha+' &nbsp;▾<select id="selF" aria-label="Elegir fecha">'+opts+'</select></label><button class="flecha" id="fSig" aria-label="Fecha siguiente">›</button></div>';
+ var diaAnt=null;ps.forEach(function(m){if(!diaAnt||!mismaFecha(diaAnt,m.date)){h+='<div class="diah">'+fCorta(m.date)+"</div>";diaAnt=m.date;}h+=filaPartido(m,false);});
+ h+="</section>";
+ return h;}
+var REFS='<div class="leyenda"><span style="--c:var(--live)">En vivo</span><span style="--c:var(--pend)">Finalizado sin validar</span><span style="--c:var(--ink)">Validado</span></div>';
+
+/* ---------- hojas ---------- */
+function abrirHoja(html){document.getElementById("hin").innerHTML=html;document.getElementById("velo").classList.add("on");document.getElementById("hoja").classList.add("on");document.getElementById("hoja").scrollTop=0;}
+function cerrarHoja(){document.getElementById("velo").classList.remove("on");document.getElementById("hoja").classList.remove("on");}
+
+function detalle(m){
+ var estado=m.est==="vivo"?(m.per+" "+String(m.reloj).padStart(2,"0")+"' · Actualizado "+fCorta(m.date)+" · "+horaAct(m)):m.est==="et"?("Entretiempo · Actualizado "+fCorta(m.date)+" · "+horaAct(m)):m.est==="fin"?"Final":(fCorta(m.date)+" · "+m.hora);
+ var mid=m.est==="prog"?'<span style="color:var(--muted);font-size:18px">vs</span>':(m.gl+(m.est==="et"?" <small style=\"color:var(--live)\">ET</small> ":" - ")+m.gv);
+ var col=m.est==="vivo"||m.est==="et"?"var(--live)":(m.est==="fin"&&!m.valid)?"var(--pend)":"var(--ink)";
+ var h='<div class="htop"><div class="miga">'+esc(m.t.nombre)+" · "+etiqFecha(m)+(m.cat==="1a"?"":" · "+m.cat)+' › <b>'+esc(corto(m.L))+" vs. "+esc(corto(m.V))+'</b></div><button class="cerrar" data-cerrar>Cerrar</button></div>';
+ h+='<div class="marc"><div class="n">'+esc(corto(m.L))+'</div><div class="r" style="color:'+col+'">'+mid+'</div><div class="n">'+esc(corto(m.V))+'</div><div class="s">'+estado+"</div></div>";
+ if(m.est==="fin")h+='<div style="text-align:center"><span class="valchip '+(m.valid?"ok":"no")+'">'+(m.valid?"✓ Validado":"Sin validar · resultado provisorio")+"</span></div>";
+ if(m.est==="prog"){h+='<section class="mam"><h3>Programación</h3><div class="ev hito"><div class="t">'+fCorta(m.date)+" · "+m.hora+'</div><div class="q">El resultado aparece acá cuando empiece el partido.</div></div></section>';return h+CERRAR_ABAJO;}
+ var evs=[];
+ var ini=hm2min(m.hora),puesto2T=false;
+ var p1=m.ev.filter(function(g){return g.per==="1T";}),p1l=p1.filter(function(g){return g.lado==="L";}).length,p1v=p1.length-p1l;
+ var etTxt={hito:"Entretiempo · "+p1l+" - "+p1v,q:"Informó "+m.delL+" (Delegado de "+m.L+") · "+min2hm(ini+28)};
+ m.ev.forEach(function(g){
+  if(g.per==="2T"&&!puesto2T){evs.push(etTxt);puesto2T=true;}
+  evs.push({m:g.per+" "+String(g.reloj).padStart(2,"0")+"'",t:"Gol de "+corto(g.lado==="L"?m.L:m.V)+" · "+g.parcial,q:"Informó "+g.quien.n+" ("+g.quien.r+") · "+g.hora});});
+ if(!puesto2T&&(m.est==="et"||(m.est==="vivo"&&m.per==="2T")||m.est==="fin"))evs.push(etTxt);
+ if(m.est==="fin"){evs.push({hito:"Final · "+m.gl+" - "+m.gv,q:"Informó "+m.delL+" (Delegado de "+m.L+") · "+m.horaFin});
+  if(m.valid)evs.push({hito:"✓ Validado",q:(S.comision?m.validadorNom+" ("+m.validador+")":"Comisión de Futsal")+" · "+m.horaVal});}
+ evs.reverse();
+ h+='<section class="mam"><h3>Minuto a minuto</h3>'+evs.map(function(e){
+  if(e.hito)return'<div class="ev hito"><div class="t">'+esc(e.hito)+"</div>"+(e.q?'<div class="q">'+esc(e.q)+"</div>":"")+"</div>";
+  return'<div class="ev"><div class="m">'+e.m+'</div><div class="t">'+esc(e.t)+'</div><div class="q">'+esc(e.q)+"</div></div>";}).join("")+"</section>";
+ return h+CERRAR_ABAJO;}
+var CERRAR_ABAJO='<div style="text-align:center;margin-top:14px"><button class="cerrar" data-cerrar>Cerrar</button></div>';
+
+function hojaEquipo(nombre,soloPend){
+ var t=torneoAct();var cat=(t.cats.indexOf("1a")<0||S.grupo!=="pri")&&t.cats.length>1?S.cat:"1a";
+ var ps=PARTIDOS.filter(function(m){return m.t===t&&m.cat===cat&&m.est==="fin"&&(m.L===nombre||m.V===nombre)&&(!soloPend||!m.valid);}).sort(function(a,b){return b.fecha-a.fecha;});
+ var h='<div class="htop"><div class="miga">'+esc(t.nombre)+(cat==="1a"?"":" · "+cat)+' › <b>'+esc(corto(nombre))+'</b></div><button class="cerrar" data-cerrar>Cerrar</button></div>';
+ h+='<section class="mam lst"><h3>'+(soloPend?"Falta validar ("+ps.length+")":"Partidos jugados ("+ps.length+")")+"</h3>";
+ ps.forEach(function(m){h+='<div class="diah">Fecha '+m.fecha+" · "+fCorta(m.date)+"</div>"+filaPartido(m,false,nombre);});
+ if(!ps.length)h+='<div class="vacio">Sin partidos.</div>';
+ return h+"</section>"+CERRAR_ABAJO;}
+
+/* ---------- render y eventos ---------- */
+function render(){
+ document.getElementById("rM").setAttribute("aria-pressed",S.rama==="M");document.getElementById("rF").setAttribute("aria-pressed",S.rama==="F");
+ document.getElementById("vA").setAttribute("aria-pressed",S.vista==="A");document.getElementById("vT").setAttribute("aria-pressed",S.vista==="T");
+ document.getElementById("main").innerHTML=S.vista==="A"?renderAgenda():renderTablas();
+ document.getElementById("notaT").style.display=S.vista==="T"?"":"none";}
+function buscar(id){for(var i=0;i<PARTIDOS.length;i++)if(PARTIDOS[i].id===id)return PARTIDOS[i];}
+
+document.getElementById("rM").onclick=function(){S.rama="M";render();};
+document.getElementById("rF").onclick=function(){S.rama="F";render();};
+document.getElementById("vA").onclick=function(){S.vista="A";render();};
+document.getElementById("vT").onclick=function(){S.vista="T";render();};
+document.getElementById("comision").onchange=function(e){S.comision=e.target.checked;render();};
+document.getElementById("velo").onclick=cerrarHoja;
+document.addEventListener("keydown",function(e){if(e.key==="Escape")cerrarHoja();});
+
+document.addEventListener("click",function(e){
+ var el=e.target.closest("button");if(!el)return;
+ if(el.hasAttribute("data-cerrar")){cerrarHoja();return;}
+ if(el.dataset.m){abrirHoja(detalle(buscar(el.dataset.m)));return;}
+ if(el.dataset.tog){S.cerrados[el.dataset.tog]=!S.cerrados[el.dataset.tog];render();return;}
+ if(el.dataset.sec){S.torneo[S.rama]=el.dataset.sec;S.grupo="pri";S.vista="T";render();window.scrollTo(0,0);return;}
+ if(el.dataset.eq){abrirHoja(hojaEquipo(el.dataset.eq,false));return;}
+ if(el.dataset.pend){abrirHoja(hojaEquipo(el.dataset.pend,true));return;}
+ if(el.dataset.cat){S.cat=el.dataset.cat;render();return;}
+ var id=el.id;var t=S.vista==="T"?torneoAct():null;
+ if(id==="dAnt"){S.dia=addD(S.dia,-1);render();}
+ else if(id==="dSig"){S.dia=addD(S.dia,1);render();}
+ else if(id==="fT"){S.filtro="todos";render();}
+ else if(id==="fV"){S.filtro="vivo";S.dia=new Date(hoy);render();}
+ else if(id==="gP"){S.grupo="pri";render();}
+ else if(id==="gI"){S.grupo="inf";render();}
+ else if(id==="fAnt"&&S.fecha[t.id]>1){S.fecha[t.id]--;render();}
+ else if(id==="fSig"&&S.fecha[t.id]<t.fechas){S.fecha[t.id]++;render();}
+});
+document.addEventListener("change",function(e){
+  if(e.target.id==="selT"){S.torneo[S.rama]=e.target.value;render();}
+ if(e.target.id==="selF"){S.fecha[torneoAct().id]=+e.target.value;render();}
+});
+
+/* calendario: se abre manteniendo apretado el día 1 segundo */
+var calMes=null,tPress=null;
+function hojaCal(){
+ var y=calMes.getFullYear(),mo=calMes.getMonth();var MESES=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+ var dias={};PARTIDOS.forEach(function(m){if(m.t.rama===S.rama&&m.cat==="1a")dias[isoDia(m.date)]=1;});
+ var h='<div class="htop"><div class="miga">Elegí un día</div><button class="cerrar" data-cerrar>Cerrar</button></div><div class="cal"><div class="calnav"><button id="cAnt" aria-label="Mes anterior">‹</button><b>'+MESES[mo]+" "+y+'</b><button id="cSig" aria-label="Mes siguiente">›</button></div><div class="calg">';
+ ["L","M","M","J","V","S","D"].forEach(function(d){h+='<div class="dn">'+d+"</div>";});
+ var primero=new Date(y,mo,1),off=(primero.getDay()+6)%7,ult=new Date(y,mo+1,0).getDate();
+ for(var i=0;i<off;i++)h+="<div></div>";
+ for(var d=1;d<=ult;d++){var f=new Date(y,mo,d),c=[];if(dias[isoDia(f)])c.push("hay");if(mismaFecha(f,hoy))c.push("hoy");if(mismaFecha(f,S.dia))c.push("sel");
+  h+='<button class="'+c.join(" ")+'" data-dia="'+isoDia(f)+'">'+d+"</button>";}
+ h+='</div><div class="leyenda" style="margin:10px 2px 0"><span style="--c:var(--accent)">Días con partidos de 1a</span></div></div>';
+ abrirHoja(h);}
+document.addEventListener("pointerdown",function(e){var l=e.target.closest("#dLbl");if(!l)return;l.classList.add("apretando");
+ tPress=setTimeout(function(){l.classList.remove("apretando");calMes=new Date(S.dia.getFullYear(),S.dia.getMonth(),1);hojaCal();},1000);});
+["pointerup","pointerleave","pointercancel"].forEach(function(ev){document.addEventListener(ev,function(){clearTimeout(tPress);var l=document.getElementById("dLbl");if(l)l.classList.remove("apretando");});});
+document.addEventListener("contextmenu",function(e){if(e.target.closest("#dLbl"))e.preventDefault();});
+document.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target.id==="dLbl"){calMes=new Date(S.dia.getFullYear(),S.dia.getMonth(),1);hojaCal();}});
+document.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
+ if(b.dataset.dia){var p=b.dataset.dia.split("-");S.dia=new Date(+p[0],+p[1]-1,+p[2]);cerrarHoja();render();}
+ else if(b.id==="cAnt"){calMes=new Date(calMes.getFullYear(),calMes.getMonth()-1,1);hojaCal();}
+ else if(b.id==="cSig"){calMes=new Date(calMes.getFullYear(),calMes.getMonth()+1,1);hojaCal();}});
+
+/* simulación: el reloj de los partidos en vivo baja 1 minuto cada 20 s */
+setInterval(function(){var cambio=false;PARTIDOS.forEach(function(m){if(m.est==="vivo"&&m.reloj>1){m.reloj--;cambio=true;}});
+ if(cambio&&S.vista==="A"&&!document.getElementById("hoja").classList.contains("on"))render();},20000);
+
+render();
+})();
+</script>
+</body>
+</html>
