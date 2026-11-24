@@ -234,6 +234,7 @@ var CM=["1a","3a","4a","5a","6a","7a","8a"],CF=["1a","3a","4a","5a","6a"];
 var TORNEOS={
  M:[
   {id:"MA",nombre:"Primera A",tipo:"liga",real:true,cats:CM,fa:34,eq:["17 de Agosto","América del Sud","Barracas Central","Boca","Camioneros","Estudiantil Porteño","Estrella de Boedo","Ferro","Glorias de Tigre","Hebraica","Newell's","Independiente","Jorge Newbery","Kimberley","Pinocho","Racing","River","San Lorenzo"]},
+  {id:"MPA",nombre:"Playoffs Primera A",tipo:"elim",po:true,cats:["1a"],eq:[],inst:[{n:"Cuartos de final"},{n:"Semifinal"},{n:"Final"}]},
   {id:"MB",nombre:"Primera B",tipo:"liga",cats:CM,fa:5,eq:["Vélez Sarsfield","Pacífico","Villa La Ñata","Nueva Estrella","Atlanta","Franja de Oro","Banfield","Alvear","Arsenal","Platense","Gimnasia (LP)","Country","Argentinos Jrs","Chacarita","SECLA","Metalúrgico","Miriñaque","Nueva Chicago"],
    hoy:["finV","finN","vivo2","vivo1","et","prog","prog","prog","prog"],horas:["17:00","18:30","19:30","20:00","20:30","21:00","21:00","21:30","21:30"]},
   {id:"MC",nombre:"Primera C",tipo:"liga",cats:CM,fa:4,eq:["Juv. Tapiales","Asturiano","Libertadores","Almafuerte","Dep. Morón","Villa Modelo","Estrella Maldonado","El Talar","CIDECO","Excursionistas","Primera Junta","GEVS","Dep. Merlo","Rosario Central","25 de Mayo","UNLAM","Villa Heredia","Villa Malcolm"],
@@ -367,8 +368,37 @@ function genElim(t){
    PARTIDOS.push(m);}
   if(!(ins.d<0))conocidos=false;
   vivos=ganadores;});}
+/* Playoffs Primera A masculino 2026. Cruces según la tabla final (Pasión Futsal). Reales: América del Sud-17 de Agosto,
+   Barracas-Kimberley (3.er partido), Independiente-River y Barracas-América (semifinales). El resto es inventado. */
+var PO=[
+[1,1,"2026-10-24","20:30","América del Sud","17 de Agosto",4,1,"",1],
+[1,1,"2026-10-24","19:00","Independiente","Ferro",4,2,"",0],
+[1,1,"2026-10-24","21:00","Barracas Central","Kimberley",2,3,"",0],
+[1,1,"2026-10-25","19:30","Boca","River",3,2,"",0],
+[1,2,"2026-10-31","20:30","17 de Agosto","América del Sud",3,3,"3-4",1],
+[1,2,"2026-10-31","19:00","Ferro","Independiente",1,3,"",0],
+[1,2,"2026-10-31","21:00","Kimberley","Barracas Central",2,5,"",0],
+[1,2,"2026-11-01","19:30","River","Boca",4,1,"",0],
+[1,3,"2026-11-12","21:00","Barracas Central","Kimberley",2,2,"4-3",1],
+[1,3,"2026-11-12","21:30","Boca","River",2,3,"",0],
+[2,1,"2026-11-15","20:00","Independiente","River",3,4,"",1],
+[2,1,"2026-11-16","20:30","Barracas Central","América del Sud",3,2,"",1],
+[2,2,"2026-11-21","17:00","River","Independiente",2,1,"",1],
+[2,2,"2026-11-21","19:30","América del Sud","Barracas Central",4,2,"",1],
+[2,3,"+1","21:00","Barracas Central","América del Sud",null,null,"",0],
+[3,1,"+8","20:00","River","Ganador semifinal 2",null,null,"",0]];
+function genPO(t){
+ t.fechas=3;
+ PO.forEach(function(r,i){
+  var date=r[2].charAt(0)==="+"?addD(hoy,+r[2].slice(1)):(function(p){return new Date(+p[0],+p[1]-1,+p[2]);})(r[2].split("-"));
+  var m={id:t.id+"-"+r[0]+"-"+i,t:t,fecha:r[0],cat:"1a",inst:t.inst[r[0]-1].n+(r[0]<3?" · Partido "+r[1]:""),L:r[4],V:r[5],date:date,hora:r[3],delL:persona(),delV:persona(),prensa:persona(),veedor:persona()};
+  if(r[6]===null){m.est="prog";}
+  else{m.est="fin";m.valid=true;m.gl=r[6];m.gv=r[7];if(r[8])m.pen=r[8];m.real=r[9]===1;m.ev=genEventos(m,m.gl,m.gv,null);
+   m.horaFin=sumarH(m.hora,95);m.validador=pick(["Referente","Comisión"]);m.validadorNom=persona();m.horaVal=sumarH(m.horaFin,40+Math.floor(R()*60));}
+  PARTIDOS.push(m);});}
 ["M","F"].forEach(function(rama){
- TORNEOS[rama].forEach(function(t){t.rama=rama;if(t.real)genReal(t);else if(t.tipo==="elim")genElim(t);else genLiga(t,rama);});});
+ TORNEOS[rama].forEach(function(t){t.rama=rama;if(t.po)return;if(t.real)genReal(t);else if(t.tipo==="elim")genElim(t);else genLiga(t,rama);});});
+TORNEOS.M.filter(function(t){return t.po;}).forEach(genPO);
 function etiqFecha(m){return m.inst?m.inst:"Fecha "+m.fecha;}
 
 /* ---------- estado ---------- */
